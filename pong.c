@@ -349,17 +349,3 @@ void game()
     clear();
     // player 1 / player 2 won message, meniu cu again / menu / exit
 }
-
-
-// Am renuntat la box-ul ala, si am trasat linia aia pe mijloc si am afisat scorurile. Mie mie mi se pare ca arata ok,
-// desi mai putem face tweaking, evident.
-// Am facut functia roundReset(Ball *b) ce e acum apelata de gameReset(Ball *b, Paddle *p1, Paddle *p2); in roundReset
-// fac reset doar la minge, pentru ca atunci cand se termina o runda nu are sens sa resetam paddle-urile, ci doar cand
-// incepe un joc nou efectiv.
-// Am mai facut struct-ul pt scor in Score, si ne putem juca usor cu el, desi am cam implementat ce puteam cu el, am
-// facut sa vedem cine a castigat runda, si se opreste atunci cand unul din ei ajunge la 11.
-//
-// TODO:
-// -> meniu pentru post-game, cu Again, Menu, Exit
-// -> sa facem macar 2 moduri pentru AI, unul mai usor si unul mai greu, dar chiar ala greu sa nu fie imbatabil
-// -> IMPORTANT: Paddle-ul sa poata fie controlat fluid de la tastatura, acum merge naspa.
