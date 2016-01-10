@@ -1,4 +1,4 @@
-# pong_ncurses
+# pong_ncurses - prototype
 
 sudo apt-get install libncurses5-dev
 
