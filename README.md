@@ -1,4 +1,5 @@
-# pong_ncurses - prototype
+# Ping Pong game made in C wiht ncurses library
+#pong_ncurses - prototype
 
 sudo apt-get install libncurses5-dev
 
