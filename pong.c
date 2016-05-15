@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <ncurses.h>
 #include <unistd.h>
 
 #define DELAY 25000
+#define MAX_SCORE 9
 
 int c;
 
@@ -33,12 +35,12 @@ struct ball
 typedef struct ball Ball;
 
 char *choices[] = {
-    "Player vs Player",
     "Player vs Computer",
     "Exit"
 };
 
 int n_choices = sizeof(choices) / sizeof(char *);
+int choice = -1;
 void print_menu(int highlight);
 
 Paddle *makePaddle(double x, double y, int width, int height, double vel);
@@ -56,7 +58,7 @@ void ballCollisionUD(Ball *ball);
 void ballBounds(Ball *b);
 void printBall(Ball *ball);
 
-void playerControl(Paddle *p, int up, int down);
+void playerControl(Paddle *p, char up, char down);
 
 void game();
 void roundReset(Ball *b);
@@ -64,8 +66,7 @@ void gameReset(Ball *b, Paddle *p1, Paddle *p2);
 
 int main()
 {
-    int highlight = 1;
-    int choice = 0;
+    int highlight = n_choices;
 
     initscr();
     getmaxyx(stdscr, Screen.max_y, Screen.max_x);
@@ -76,15 +77,21 @@ int main()
     keypad(stdscr, TRUE);
     refresh();
 
-    /*print_menu(highlight);
+    init_pair(0, 0, 0); // black background
+    init_pair(1, 0, 1);
+    init_pair(2, 4, 3);
+    init_pair(3, 2, 7);
+    init_pair(4, 0, 7);
 
     while (1)
     {
+        attrset(COLOR_PAIR(4));
+        print_menu(highlight);
         c = getch();
         switch (c)
         {
         case KEY_UP:
-            if (highlight == 1)
+            if (highlight == 1 )
                 highlight = n_choices;
             else
                 --highlight;
@@ -102,22 +109,21 @@ int main()
             refresh();
             break;
         }
-        print_menu(highlight);
-        if (choice != 0)
+
+        if (choice == n_choices)
         {
             clear();
-            printw("Your choice was %s", choices[choice - 1]);
-            break;
+            game();
+        }
+        else if (choice == 1)
+        {
+            clear;
+            endwin();
+            return 0;
         }
     }
-    */
-
-    game();
 
     refresh();
-    endwin();
-
-    return 0;
 }
 
 void print_menu(int highlight)
@@ -177,9 +183,8 @@ void movePaddleDown(Paddle *paddle)
 
 void aiPaddle(Ball *b, Paddle *p)
 {
-    srand(time(NULL));
-    if (p->y > b->y && rand() % 2) movePaddleUp(p);
-    else if (p->y < b->y && rand() % 2) movePaddleDown(p);
+    if ((rand() % 2) && p->y > b->y) movePaddleUp(p);
+    else if ((rand() % 2) && p->y < b->y) movePaddleDown(p);
 }
 
 Ball *makeBall()
@@ -217,13 +222,13 @@ void ballBounds(Ball *b)
     if (b->x < 0)
     {
         Score.y++;
-        usleep(DELAY * 10);
+        //usleep(DELAY * 10);
         roundReset(b);
     }
     else if (b->x > Screen.max_x)
     {
         Score.x++;
-        usleep(DELAY * 10);
+        //usleep(DELAY * 10);
         roundReset(b);
     }
 }
@@ -248,7 +253,7 @@ void printPaddle(Paddle *paddle)
             mvprintw(paddle->y + h, paddle->x + w, " ");
 }
 
-void playerControl(Paddle *p, int up, int down)
+void playerControl(Paddle *p, char up, char down)
 {
     c = wgetch(stdscr);
     if (c == up) movePaddleUp(p);
@@ -269,11 +274,12 @@ void gameReset(Ball *b, Paddle *p1, Paddle *p2)
     roundReset(b);
     p1->x = 1; p2->x = Screen.max_x - p2->w - 1;
     p1->y = Screen.max_y / 2; p2->y = Screen.max_y / 2;
+    Score.x = Score.y = 0;
 }
 
 void printScore()
 {
-    int half = (Screen.max_x - 2) / 2;
+    int half = (Screen.max_x - 4) / 2;
     int i = 0;
     for (i = 0; i < Screen.max_y; i++)
     {
@@ -285,24 +291,24 @@ void printScore()
     attroff(A_BOLD);
 }
 
+void printWinner()
+{
+    if (Score.x == MAX_SCORE) mvprintw(Screen.max_y / 2, Screen.max_x / 2 - 7, "Player 1 Wins");
+    else if (Score.y == MAX_SCORE) mvprintw(Screen.max_y / 2, Screen.max_x / 2 - 7, "Player 2 Wins");
+}
+
 void game()
 {
     Ball *b = makeBall(Screen.max_x / 2, Screen.max_y / 2, -1, 1);
-    Paddle *p1 = makePaddle(0, Screen.max_y / 2, 1, 4, 1);
-    Paddle *p2 = makePaddle(Screen.max_x, Screen.max_y / 2, 1, 4, 1);
-    timeout(0.5);
-
-    init_pair(0, 0, 0); // black background
-    init_pair(1, 0, 1);
-    init_pair(2, 4, 3);
-    init_pair(3, 2, 7);
+    Paddle *p1 = makePaddle(0, Screen.max_y / 2, 1, 4, 2);
+    Paddle *p2 = makePaddle(Screen.max_x, Screen.max_y / 2, 1, 4, 2);
+    timeout(0);
 
     gameReset(b, p1, p2);
 
-    while (Score.x < 11 && Score.y < 11)
+    while (Score.x < MAX_SCORE && Score.y < MAX_SCORE)
     {
         clear();
-        usleep(DELAY);
 
         ballCollisionLR(b, p1);
         ballCollisionLR(b, p2);
@@ -310,27 +316,10 @@ void game()
         ballBounds(b);
         moveBall(b);
 
-        playerControl(p2, KEY_UP, KEY_DOWN);
-        //playerControl(p1, 'w', 's');
+        usleep(DELAY);
 
-        //aiPaddle(b, p2);
-        //aiPaddle(b, p1);
-
-        /*playerControl(p2, KEY_UP, KEY_DOWN);
         aiPaddle(b, p1);
-
-        box(game_win, 0, 0);
-        attrset(COLOR_PAIR(1));
-        printBall(b);
-        attrset(COLOR_PAIR(2));
-        printPaddle(p1);
-        attrset(COLOR_PAIR(3));
-        printPaddle(p2);
-        refresh();*/
-
-        //aiPaddle(b, p2);
-        aiPaddle(b, p1);
-        //playerControl(p2, KEY_UP, KEY_DOWN);
+        playerControl(p2, 'k', 'm');
 
         attrset(COLOR_PAIR(0));
         printScore();
@@ -345,7 +334,12 @@ void game()
     destroyBall(b);
     destroyPaddle(p1);
     destroyPaddle(p2);
+    choice = -1;
+    clear();
+    printWinner();
+    refresh();
+    usleep(3000000);
 
     clear();
-    // player 1 / player 2 won message, meniu cu again / menu / exit
+
 }
